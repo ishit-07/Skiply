@@ -1,4 +1,4 @@
-import { ActiveVideoDetector, type ActiveVideoDetection } from './active-video-detector';
+import { ActiveVideoDetector, scoreVideo, type ActiveVideoDetection } from './active-video-detector';
 
 export interface VideoLifecycleCallbacks {
   onActiveVideoChanged?: (detection: ActiveVideoDetection | null) => void;
@@ -6,12 +6,14 @@ export interface VideoLifecycleCallbacks {
 
 export interface VideoLifecycleOptions extends VideoLifecycleCallbacks {
   detector?: ActiveVideoDetector;
+  getActiveVideo?: () => HTMLVideoElement | null;
   debounceMs?: number;
 }
 
 export class VideoLifecycleManager {
   private readonly detector: ActiveVideoDetector;
   private readonly debounceMs: number;
+  private readonly activeVideoProvider?: () => HTMLVideoElement | null;
   private readonly onActiveVideoChanged?: (detection: ActiveVideoDetection | null) => void;
   private readonly videoListeners = new Map<HTMLVideoElement, () => void>();
   private mutationObserver: MutationObserver | null = null;
@@ -22,6 +24,7 @@ export class VideoLifecycleManager {
   public constructor(options: VideoLifecycleOptions = {}) {
     this.detector = options.detector ?? new ActiveVideoDetector();
     this.debounceMs = options.debounceMs ?? 150;
+    this.activeVideoProvider = options.getActiveVideo;
     this.onActiveVideoChanged = options.onActiveVideoChanged;
   }
 
@@ -65,10 +68,17 @@ export class VideoLifecycleManager {
       return null;
     }
 
-    const detection = this.detector.detect();
+    const detection = this.activeVideoProvider
+      ? this.getActiveVideoDetection()
+      : this.detector.detect();
     this.syncVideoListeners();
     this.setActiveVideo(detection?.video ?? null);
     return detection;
+  }
+
+  private getActiveVideoDetection(): ActiveVideoDetection | null {
+    const video = this.activeVideoProvider?.() ?? null;
+    return video ? scoreVideo(video) : null;
   }
 
   public getActiveVideo(): HTMLVideoElement | null {
@@ -120,6 +130,11 @@ export class VideoLifecycleManager {
     }
 
     this.activeVideo = video;
-    this.onActiveVideoChanged?.(video ? this.detector.detect() : null);
+    const detection = video
+      ?       this.activeVideoProvider
+        ? this.getActiveVideoDetection()
+        : this.detector.detect()
+      : null;
+    this.onActiveVideoChanged?.(detection);
   }
 }

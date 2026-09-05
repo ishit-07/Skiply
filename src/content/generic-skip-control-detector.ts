@@ -6,7 +6,8 @@ export type DetectionSource =
   | 'aria-labelledby'
   | 'title'
   | 'data-attribute'
-  | 'structural-context';
+  | 'structural-context'
+  | 'platform-adapter';
 
 export interface CandidateControl {
   element: HTMLElement;

@@ -16,3 +16,7 @@ Milestone 6 implements the `OTTAdapter` contract and `AdapterRegistry`. An adapt
 To add an adapter, implement the contract in a new directory, register it with `AdapterRegistry`, and keep platform-specific selectors and metadata parsing inside that adapter. The generic fallback should remain available even when a specific adapter matches.
 
 Milestone 7 adds the first optional adapter for Netflix. It only matches `*.netflix.com`, uses the shared active-video and semantic-control detectors, and reads metadata from exposed attributes/text when available. It does not assume private player internals or bypass inaccessible, cross-origin, DRM, or closed-shadow-DOM boundaries. Generic detection remains the fallback and is still used for unknown sites.
+
+The selected adapter is used by the content runtime for active-video and candidate discovery. This keeps the adapter enhancement real while preserving the shared lifecycle, confidence, and skip safety layers.
+
+The audit also identified a concrete generic limitation for Prime Video: generic metadata has no reliable way to interpret Prime's detail/watch URL structure. Milestone 10 adds a narrow `PrimeVideoAdapter` that matches supported Prime detail/watch routes and extracts only exposed title/season/episode hints. It still delegates active-video, control, and seek safety to shared implementations.

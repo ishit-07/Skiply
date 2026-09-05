@@ -62,4 +62,17 @@ describe('VideoLifecycleManager', () => {
     await new Promise((resolve) => window.setTimeout(resolve, 5));
     expect(manager.getActiveVideo()).toBeNull();
   });
+
+  it('uses an adapter-provided active video source when configured', () => {
+    const video = makePlayingVideo();
+    document.body.append(video);
+    const manager = new VideoLifecycleManager({
+      getActiveVideo: () => video
+    });
+
+    manager.start();
+
+    expect(manager.getActiveVideo()).toBe(video);
+    manager.stop();
+  });
 });

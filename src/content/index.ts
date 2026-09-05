@@ -78,6 +78,7 @@ const skipController = new SkipController({
 });
 
 const controlObserver = new SkipControlObserver({
+  findCandidates: () => adapterSelection.adapter.findSkipControls(),
   onCandidates: (candidates) => {
     log('skip control candidates', candidates.map(({ type, confidence, detectionSource }) => ({
       type,
@@ -93,6 +94,7 @@ const controlObserver = new SkipControlObserver({
 
 const lifecycleManager = new VideoLifecycleManager({
   detector: new ActiveVideoDetector(),
+  getActiveVideo: () => adapterSelection.adapter.getActiveVideo(),
   onActiveVideoChanged: (detection) => {
     skipController.setActiveVideo(detection?.video ?? null);
     controlObserver.setActiveVideo(detection?.video ?? null);

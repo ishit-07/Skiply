@@ -19,3 +19,7 @@ Milestone 8 retains the full prior suite while validating the production build f
 Milestone 9 adds `src/testing/compatibility-harness.ts`, a local DOM harness covering visible text, ARIA labels, role buttons, data attributes, advertisement controls, and next-episode controls. The reliability suite also exercises dynamic insertion, observer cleanup, multiple-video selection, player replacement, stale controls, and conservative failure behavior through the existing lifecycle/controller tests.
 
 The harness is intentionally local and deterministic. It does not access streaming services, bypass DRM, or depend on remote fixtures.
+
+Adapter integration tests also verify that a custom adapter candidate source and active-video provider are honored by the lifecycle and observer managers.
+
+Milestone 10 additionally covers Prime Video route matching, unsupported-domain rejection, URL-based season/episode extraction, and default registry selection.

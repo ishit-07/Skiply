@@ -2,4 +2,4 @@
 
 The project includes Vitest and Playwright support to prepare the extension for unit and browser-level validation.
 
-The initial milestone intentionally keeps tests minimal and infrastructure-focused while establishing the test stack that future detection and UI milestones will rely on.
+Milestone 2 covers active-video selection with jsdom tests for hidden, offscreen, zero-sized, multiple, and playing-video cases. Lifecycle tests cover delayed video insertion and cleanup after stopping the manager.

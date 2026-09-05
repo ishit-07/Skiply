@@ -1,4 +1,8 @@
 import { ActiveVideoDetector } from './active-video-detector';
+import { createDefaultAdapterRegistry } from '../adapters/adapter-registry';
+import { ManualTimestampSession } from './manual-timestamp-session';
+import { LocalTimestampRepository } from '../storage/timestamp-repository';
+import type { ContentCommandMessage, ContentResponse } from '../shared/runtime-messages';
 import { SkipController } from './skip-controller';
 import { SkipControlObserver } from './skip-control-observer';
 import { VideoLifecycleManager } from './video-lifecycle-manager';
@@ -13,8 +17,58 @@ const notifyReady = () => {
   });
 };
 
+const adapterSelection = createDefaultAdapterRegistry().select(new URL(window.location.href));
+log('adapter selected', {
+  id: adapterSelection.adapter.id,
+  matchedSpecificAdapter: adapterSelection.matchedSpecificAdapter,
+  metadata: adapterSelection.adapter.getEpisodeMetadata()
+});
+
+const timestampSession = new ManualTimestampSession(new LocalTimestampRepository());
+
+const getContentStatus = () => ({
+  adapterId: adapterSelection.adapter.id,
+  activeVideo: Boolean(adapterSelection.adapter.getActiveVideo()),
+  currentTime: adapterSelection.adapter.getActiveVideo()?.currentTime ?? null,
+  metadataAvailable: Boolean(adapterSelection.adapter.getEpisodeMetadata()),
+  timestampStart: timestampSession.getStart()
+});
+
+chrome.runtime.onMessage.addListener((message: ContentCommandMessage, _sender, sendResponse) => {
+  if (message.type !== 'content-command') {
+    return false;
+  }
+
+  const video = adapterSelection.adapter.getActiveVideo();
+  if (message.command === 'get-status') {
+    sendResponse({ ok: true, status: getContentStatus() } satisfies ContentResponse);
+    return false;
+  }
+  if (!video) {
+    sendResponse({ ok: false, message: 'No active video detected.' } satisfies ContentResponse);
+    return false;
+  }
+  if (message.command === 'mark-start') {
+    try {
+      timestampSession.markStart(video.currentTime);
+      sendResponse({ ok: true, status: getContentStatus() } satisfies ContentResponse);
+    } catch (error: unknown) {
+      sendResponse({ ok: false, message: error instanceof Error ? error.message : 'Unable to mark start.' } satisfies ContentResponse);
+    }
+    return false;
+  }
+  void timestampSession
+    .markEnd(video.currentTime, adapterSelection.adapter.getEpisodeMetadata() ?? {})
+    .then(() => sendResponse({ ok: true, status: getContentStatus() } satisfies ContentResponse))
+    .catch((error: unknown) =>
+      sendResponse({ ok: false, message: error instanceof Error ? error.message : 'Unable to mark end.' } satisfies ContentResponse)
+    );
+  return true;
+});
+
 const skipController = new SkipController({
   onSkipped: (candidate) => {
+    chrome.runtime.sendMessage({ type: 'record-skip' });
     log('skip action accepted', {
       type: candidate.type,
       confidence: candidate.confidence,

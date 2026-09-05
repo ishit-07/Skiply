@@ -9,3 +9,5 @@ The schema stores settings and timestamp records under separate local keys. Time
 `LocalTimestampRepository` validates records, bounds them against known video duration when finding a match, and ranks matches using platform, series identifier, season, episode, show title, and episode title. Show-title-only matches are rejected for automatic use.
 
 `ManualTimestampSession` provides the local "Mark Intro Start" and "Mark Intro End" flow. It requires a valid platform and an end time after the start, saves a typed record, and resets after a successful save.
+
+Skip statistics are stored locally under a separate key and contain only a count and last-skipped timestamp. They are updated by the background worker after an accepted local click; no page history, content, or telemetry is collected.

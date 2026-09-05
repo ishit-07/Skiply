@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import './styles.css';
 import { DEFAULT_SETTINGS, SETTINGS_KEY, type ExtensionSettings } from '../shared/settings';
+import { DEFAULT_STATISTICS, STATISTICS_KEY, type SkipStatistics } from '../shared/statistics';
 
 const readSettings = (): Promise<ExtensionSettings> =>
   new Promise((resolve) => {
@@ -14,14 +15,27 @@ const readSettings = (): Promise<ExtensionSettings> =>
 
 const App = () => {
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
+  const [statistics, setStatistics] = useState<SkipStatistics>(DEFAULT_STATISTICS);
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     void readSettings().then(setSettings);
+    chrome.storage.local.get(STATISTICS_KEY, (result) => {
+      setStatistics({ ...DEFAULT_STATISTICS, ...(result[STATISTICS_KEY] as Partial<SkipStatistics> | undefined) });
+    });
   }, []);
 
   const updateSettings = (next: ExtensionSettings) => {
     setSettings(next);
     chrome.storage.local.set({ [SETTINGS_KEY]: next });
+  };
+
+  const clearLocalData = () => {
+    chrome.storage.local.remove([SETTINGS_KEY, STATISTICS_KEY, 'universal-skip-intro-timestamps'], () => {
+      setSettings(DEFAULT_SETTINGS);
+      setStatistics(DEFAULT_STATISTICS);
+      setNotice('Local settings, statistics, and timestamps cleared.');
+    });
   };
 
   return (
@@ -95,6 +109,15 @@ const App = () => {
             <strong>{settings.confidenceThreshold.toFixed(2)}</strong>
           </div>
         </label>
+      </section>
+
+      <section className="data-section">
+        <h2>Local data</h2>
+        <p className="subtle">Skips recorded on this browser: {statistics.skippedCount}</p>
+        <button type="button" className="danger-button" onClick={clearLocalData}>
+          Clear local data
+        </button>
+        {notice && <p className="subtle">{notice}</p>}
       </section>
     </main>
   );

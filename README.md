@@ -16,7 +16,7 @@ This repository is the initial milestone scaffold for the extension. It includes
 
 ## Milestone 1 status
 
-Milestone 2 adds active HTML video selection and lifecycle management. Generic skip-control detection and skip execution remain deferred to later milestones.
+Milestone 2 adds active HTML video selection and lifecycle management. Milestone 3 adds generic semantic skip-control discovery and dynamic control observation. Milestone 4 adds guarded high-confidence click execution with duplicate prevention.
 
 ## Quick start
 

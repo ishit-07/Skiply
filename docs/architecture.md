@@ -11,7 +11,14 @@ The extension intentionally separates concerns into major execution layers:
 - `shared` for common schema and configuration used by UI and worker contexts
 - `content/active-video-detector.ts` for conservative active-player selection
 - `content/video-lifecycle-manager.ts` for debounced DOM and media lifecycle updates
+- `content/generic-skip-control-detector.ts` for accessibility-first semantic control matching
+- `content/skip-control-observer.ts` for debounced dynamic control discovery
+- `content/skip-controller.ts` for final candidate validation and one-time click execution
 
 The active-video layer scores every currently connected HTML video using visibility, viewport intersection, rendered dimensions, playback state, and duration availability. Hidden, detached, zero-sized, or fully offscreen videos are rejected. The lifecycle manager owns one MutationObserver, attaches bounded media event listeners, debounces refreshes, and reports only active-video identity changes.
+
+The generic control detector inspects visible text, ARIA labels, labelled-by references, titles, data attributes, and button semantics. It recognizes intro, recap, and credits phrases, supports configurable localized phrases, and rejects unsafe controls such as ads, trailers, previews, and next-episode actions. Confidence is evidence-based and candidate discovery is separate from skip execution.
+
+The skip controller is the final action boundary. It requires an active video, high confidence, a connected visible enabled element, and an enabled skip type before clicking. Credits remain disabled by default, and a `WeakSet` prevents repeated clicks on the same DOM node during mutation rescans.
 
 The extension is designed to remain local-first and to avoid use of backend services or remote telemetry.

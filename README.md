@@ -16,7 +16,7 @@ This repository is the initial milestone scaffold for the extension. It includes
 
 ## Milestone 1 status
 
-This milestone intentionally focuses on bootstrap infrastructure and a safe, extension-ready build. It does not implement the full detection engine yet.
+Milestone 2 adds active HTML video selection and lifecycle management. Generic skip-control detection and skip execution remain deferred to later milestones.
 
 ## Quick start
 

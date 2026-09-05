@@ -37,4 +37,10 @@ Milestone 7 registers `NetflixAdapter` as the first optional enhancement. The ad
 
 Milestone 8 connects the popup to the content script through typed runtime commands. The popup can inspect page/player readiness and mark local timestamp start/end points. The background worker records only a local skip count, while the options page can clear settings, statistics, and timestamp records together.
 
+Milestone 9 adds a local compatibility harness under `src/testing`. It exercises the generic detector and controller as independent units, keeping reliability scenarios reproducible without coupling production code to a specific streaming service.
+
+The adapter boundary is now active at runtime: the selected adapter supplies the lifecycle manager's active-video provider and the control observer's candidate provider. The generic detector remains the default implementation, while a specific adapter can enhance those signals without replacing the shared safety controller.
+
+The manifest audit removed the redundant `activeTab` permission; `storage` and the declared content-script host access remain the only required permissions for the current local-first runtime.
+
 The extension is designed to remain local-first and to avoid use of backend services or remote telemetry.

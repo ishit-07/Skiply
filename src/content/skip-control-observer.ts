@@ -5,6 +5,7 @@ import {
 
 export interface SkipControlObserverOptions {
   detector?: GenericSkipControlDetector;
+  findCandidates?: (activeVideo: HTMLVideoElement | null) => CandidateControl[];
   debounceMs?: number;
   onCandidates: (candidates: CandidateControl[]) => void;
 }
@@ -13,6 +14,7 @@ export class SkipControlObserver {
   private readonly detector: GenericSkipControlDetector;
   private readonly debounceMs: number;
   private readonly onCandidates: (candidates: CandidateControl[]) => void;
+  private readonly findCandidates?: (activeVideo: HTMLVideoElement | null) => CandidateControl[];
   private observer: MutationObserver | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private started = false;
@@ -20,6 +22,7 @@ export class SkipControlObserver {
 
   public constructor(options: SkipControlObserverOptions) {
     this.detector = options.detector ?? new GenericSkipControlDetector();
+    this.findCandidates = options.findCandidates;
     this.debounceMs = options.debounceMs ?? 150;
     this.onCandidates = options.onCandidates;
   }
@@ -59,7 +62,9 @@ export class SkipControlObserver {
     if (!this.started) {
       return [];
     }
-    const candidates = this.detector.findCandidates(document, this.activeVideo);
+    const candidates = this.findCandidates
+      ? this.findCandidates(this.activeVideo)
+      : this.detector.findCandidates(document, this.activeVideo);
     this.onCandidates(candidates);
     return candidates;
   }

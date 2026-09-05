@@ -16,7 +16,7 @@ This repository is the initial milestone scaffold for the extension. It includes
 
 ## Milestone 1 status
 
-Milestone 2 adds active HTML video selection and lifecycle management. Milestone 3 adds generic semantic skip-control discovery and dynamic control observation. Milestone 4 adds guarded high-confidence click execution with duplicate prevention. Milestone 5 adds local timestamp storage and manual timestamp marking. Milestone 6 adds the adapter contract and generic fallback. Milestone 7 adds a conservative Netflix adapter. Milestone 8 adds popup/options controls, manual timestamp commands, and local skip statistics.
+Milestone 2 adds active HTML video selection and lifecycle management. Milestone 3 adds generic semantic skip-control discovery and dynamic control observation. Milestone 4 adds guarded high-confidence click execution with duplicate prevention. Milestone 5 adds local timestamp storage and manual timestamp marking. Milestone 6 adds the adapter contract and generic fallback. Milestone 7 adds a conservative Netflix adapter. Milestone 8 adds popup/options controls, manual timestamp commands, and local skip statistics. Milestone 9 adds a local compatibility and reliability harness. Milestone 10 wires adapter providers into the runtime, adds a narrow Prime Video adapter, and removes a redundant permission.
 
 ## Quick start
 

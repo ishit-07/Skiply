@@ -6,7 +6,8 @@ export type DetectionSource =
   | 'aria-labelledby'
   | 'title'
   | 'data-attribute'
-  | 'structural-context';
+  | 'structural-context'
+  | 'platform-adapter';
 
 export interface CandidateControl {
   element: HTMLElement;
@@ -210,7 +211,7 @@ export const calculateControlConfidence = (
     }
   }
 
-  return { confidence: Math.min(1, confidence), evidence };
+  return { confidence: Math.round(Math.min(1, confidence) * 100) / 100, evidence };
 };
 
 export class GenericSkipControlDetector {

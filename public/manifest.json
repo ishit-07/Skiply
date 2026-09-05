@@ -3,7 +3,7 @@
   "name": "Universal Skip Intro",
   "version": "0.1.0",
   "description": "Automatically skip intros, recaps, and repetitive content while you stream.",
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"

@@ -1,6 +1,7 @@
 import type { AdapterSelection, OTTAdapter } from './adapter';
 import { GenericAdapter } from './generic/generic-adapter';
 import { NetflixAdapter } from './netflix/netflix-adapter';
+import { PrimeVideoAdapter } from './prime-video/prime-video-adapter';
 
 export class AdapterRegistry {
   private readonly genericAdapter: OTTAdapter;
@@ -28,4 +29,4 @@ export class AdapterRegistry {
 }
 
 export const createDefaultAdapterRegistry = (): AdapterRegistry =>
-  new AdapterRegistry([new NetflixAdapter()]);
+  new AdapterRegistry([new NetflixAdapter(), new PrimeVideoAdapter()]);

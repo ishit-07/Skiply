@@ -39,4 +39,12 @@ describe('AdapterRegistry', () => {
     expect(selection.adapter.id).toBe('netflix');
     expect(selection.matchedSpecificAdapter).toBe(true);
   });
+
+  it('selects Prime Video for supported detail URLs', () => {
+    const selection = createDefaultAdapterRegistry().select(
+      new URL('https://www.primevideo.com/detail/example')
+    );
+
+    expect(selection.adapter.id).toBe('prime-video');
+  });
 });

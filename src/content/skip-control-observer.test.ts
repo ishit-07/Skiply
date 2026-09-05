@@ -49,4 +49,24 @@ describe('SkipControlObserver', () => {
 
     expect(onCandidates).not.toHaveBeenCalled();
   });
+
+  it('supports an adapter-provided candidate source', () => {
+    const onCandidates = vi.fn();
+    const adapterCandidate = {
+      element: document.createElement('button'),
+      type: 'intro' as const,
+      confidence: 0.96,
+      detectionSource: 'platform-adapter' as const,
+      evidence: []
+    };
+    const observer = new SkipControlObserver({
+      onCandidates,
+      findCandidates: () => [adapterCandidate]
+    });
+
+    observer.start();
+
+    expect(onCandidates.mock.calls[0]?.[0]).toEqual([adapterCandidate]);
+    observer.stop();
+  });
 });

@@ -17,3 +17,5 @@ Milestone 3 adds the generic semantic control layer. Candidates are only collect
 Candidate discovery does not click or seek. Automatic action and final safety validation belong to later milestones.
 
 Milestone 4 connects candidates to a conservative action controller. Automatic clicks use a `0.90` confidence threshold, require an active video, and default to intro and recap only. Stale, hidden, disabled, unsupported, low-confidence, and duplicate candidates are rejected without action. The controller does not seek, monkey-patch media APIs, or bypass site security boundaries.
+
+Milestone 9 validates this behavior against a local compatibility catalog. Positive accessible controls are distinguished from ad and next-episode controls, and candidates removed before action fail closed. The harness does not claim universal site compatibility; it verifies behavior only where the browser exposes testable DOM/media signals.

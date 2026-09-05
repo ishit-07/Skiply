@@ -37,4 +37,6 @@ Milestone 7 registers `NetflixAdapter` as the first optional enhancement. The ad
 
 Milestone 8 connects the popup to the content script through typed runtime commands. The popup can inspect page/player readiness and mark local timestamp start/end points. The background worker records only a local skip count, while the options page can clear settings, statistics, and timestamp records together.
 
+Milestone 9 adds a local compatibility harness under `src/testing`. It exercises the generic detector and controller as independent units, keeping reliability scenarios reproducible without coupling production code to a specific streaming service.
+
 The extension is designed to remain local-first and to avoid use of backend services or remote telemetry.

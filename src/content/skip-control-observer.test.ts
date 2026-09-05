@@ -52,6 +52,7 @@ describe('SkipControlObserver', () => {
 
   it('supports an adapter-provided candidate source', () => {
     const onCandidates = vi.fn();
+    const activeVideo = document.createElement('video');
     const adapterCandidate = {
       element: document.createElement('button'),
       type: 'intro' as const,
@@ -61,12 +62,40 @@ describe('SkipControlObserver', () => {
     };
     const observer = new SkipControlObserver({
       onCandidates,
-      findCandidates: () => [adapterCandidate]
+      findCandidates: (receivedVideo) => {
+        expect(receivedVideo).toBe(activeVideo);
+        return [adapterCandidate];
+      }
     });
 
-    observer.start();
+    observer.start(activeVideo);
 
     expect(onCandidates.mock.calls[0]?.[0]).toEqual([adapterCandidate]);
+    observer.stop();
+  });
+
+  it('ignores unrelated attribute mutations', async () => {
+    const onCandidates = vi.fn();
+    const observer = new SkipControlObserver({ debounceMs: 1, onCandidates });
+    observer.start();
+    onCandidates.mockClear();
+
+    document.body.setAttribute('id', 'unrelated');
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 5));
+
+    expect(onCandidates).not.toHaveBeenCalled();
+    observer.stop();
+  });
+
+  it('reacts to attributes used by candidate detection', async () => {
+    const onCandidates = vi.fn();
+    const observer = new SkipControlObserver({ debounceMs: 1, onCandidates });
+    observer.start();
+    onCandidates.mockClear();
+
+    document.body.setAttribute('data-player-state', 'ready');
+    await vi.waitFor(() => expect(onCandidates).toHaveBeenCalled());
+
     observer.stop();
   });
 });

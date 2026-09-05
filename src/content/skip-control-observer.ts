@@ -10,6 +10,24 @@ export interface SkipControlObserverOptions {
   onCandidates: (candidates: CandidateControl[]) => void;
 }
 
+const RELEVANT_ATTRIBUTES = new Set([
+  'aria-disabled',
+  'aria-hidden',
+  'aria-label',
+  'aria-labelledby',
+  'class',
+  'disabled',
+  'hidden',
+  'style',
+  'title'
+]);
+
+const isRelevantMutation = (mutation: MutationRecord): boolean =>
+  mutation.type === 'childList' ||
+  (mutation.type === 'attributes' &&
+    (RELEVANT_ATTRIBUTES.has(mutation.attributeName ?? '') ||
+      mutation.attributeName?.startsWith('data-') === true));
+
 export class SkipControlObserver {
   private readonly detector: GenericSkipControlDetector;
   private readonly debounceMs: number;
@@ -36,7 +54,11 @@ export class SkipControlObserver {
     this.scan();
 
     if (document.body) {
-      this.observer = new MutationObserver(() => this.scheduleScan());
+      this.observer = new MutationObserver((mutations) => {
+        if (mutations.some(isRelevantMutation)) {
+          this.scheduleScan();
+        }
+      });
       this.observer.observe(document.body, { childList: true, subtree: true, attributes: true });
     }
   }

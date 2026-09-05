@@ -13,7 +13,13 @@ const log = (...args: unknown[]) => {
 
 console.info('[Skiply] Content script initialized');
 
+let readyNotified = false;
+
 const notifyReady = () => {
+  if (readyNotified) {
+    return;
+  }
+  readyNotified = true;
   chrome.runtime.sendMessage({ type: 'ping', url: window.location.href }, () => {
     log('ready on', window.location.href);
   });
@@ -80,7 +86,7 @@ const skipController = new SkipController({
 });
 
 const controlObserver = new SkipControlObserver({
-  findCandidates: () => adapterSelection.adapter.findSkipControls(),
+  findCandidates: (activeVideo) => adapterSelection.adapter.findSkipControls(activeVideo),
   onCandidates: (candidates) => {
     log('skip control candidates', candidates.map(({ type, confidence, detectionSource }) => ({
       type,

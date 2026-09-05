@@ -5,7 +5,7 @@ export interface OTTAdapter {
   id: string;
   matches(url: URL): boolean;
   getActiveVideo(): HTMLVideoElement | null;
-  findSkipControls(): CandidateControl[];
+  findSkipControls(activeVideo?: HTMLVideoElement | null): CandidateControl[];
   getEpisodeMetadata(): EpisodeMetadata | null;
   seekTo(seconds: number): Promise<boolean>;
 }

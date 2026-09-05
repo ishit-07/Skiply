@@ -11,6 +11,8 @@ const log = (...args: unknown[]) => {
   console.info('[USI][content]', ...args);
 };
 
+console.info('[Skiply] Content script initialized');
+
 const notifyReady = () => {
   chrome.runtime.sendMessage({ type: 'ping', url: window.location.href }, () => {
     log('ready on', window.location.href);

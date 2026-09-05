@@ -7,3 +7,5 @@ Milestone 2 covers active-video selection with jsdom tests for hidden, offscreen
 Milestone 3 covers normalized phrases, localized configuration, ARIA-labelled controls, data attributes, unsafe phrase exclusions, hidden and disabled controls, confidence ranking, delayed control insertion, debouncing, and observer cleanup.
 
 Milestone 4 covers high-confidence click execution, missing active-video safety, low-confidence rejection, stale/hidden/disabled controls, credits being disabled by default, and duplicate-click prevention.
+
+Milestone 5 covers timestamp bounds, duration validation, metadata matching, rejection of title-only matches, storage defaults and replacement, and manual start/end marking.

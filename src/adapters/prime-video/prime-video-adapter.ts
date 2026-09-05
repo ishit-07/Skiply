@@ -23,8 +23,8 @@ export class PrimeVideoAdapter implements OTTAdapter {
     return this.videoDetector.detect()?.video ?? null;
   }
 
-  public findSkipControls(): CandidateControl[] {
-    return this.controlDetector.findCandidates(document, this.getActiveVideo());
+  public findSkipControls(activeVideo?: HTMLVideoElement | null): CandidateControl[] {
+    return this.controlDetector.findCandidates(document, activeVideo === undefined ? this.getActiveVideo() : activeVideo);
   }
 
   public getEpisodeMetadata(): EpisodeMetadata | null {

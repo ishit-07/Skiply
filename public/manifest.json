@@ -3,6 +3,12 @@
   "name": "Universal Skip Intro",
   "version": "0.1.0",
   "description": "Automatically skip intros, recaps, and repetitive content while you stream.",
+  "icons": {
+    "16": "icons/skiply-16.png",
+    "32": "icons/skiply-32.png",
+    "48": "icons/skiply-48.png",
+    "128": "icons/skiply-128.png"
+  },
   "permissions": ["storage"],
   "host_permissions": ["<all_urls>"],
   "background": {
@@ -17,7 +23,13 @@
   ],
   "action": {
     "default_title": "Universal Skip Intro",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/skiply-16.png",
+      "32": "icons/skiply-32.png",
+      "48": "icons/skiply-48.png",
+      "128": "icons/skiply-128.png"
+    }
   },
   "options_ui": {
     "page": "options.html",

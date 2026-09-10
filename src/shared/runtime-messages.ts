@@ -8,6 +8,24 @@ export interface FrameStatusReport {
   candidateCount: number;
   bestCandidateType: string | null;
   bestCandidateConfidence: number | null;
+  controlDiagnostics?: {
+    controls: Array<{
+      tagName: string;
+      role: string | null;
+      text: string;
+      ariaLabel: string | null;
+      title: string | null;
+      visible: boolean;
+      enabled: boolean;
+      matchedPhrase: string | null;
+      matchedType: string | null;
+      stage: string;
+    }>;
+    truncated: boolean;
+    openShadowHosts: number;
+    nestedIframes: number;
+    canvasElements: number;
+  };
 }
 
 export interface FrameDiagnostic extends FrameStatusReport {

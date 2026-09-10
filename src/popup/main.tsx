@@ -157,6 +157,20 @@ const App = () => {
                 Best candidate: {frame.bestCandidateType} / {frame.bestCandidateConfidence?.toFixed(2) ?? 'n/a'}
               </span>
             )}
+            {frame.controlDiagnostics && (
+              <>
+                <span>
+                  Structure: {frame.controlDiagnostics.nestedIframes} nested iframe(s),{' '}
+                  {frame.controlDiagnostics.canvasElements} canvas element(s)
+                </span>
+                {frame.controlDiagnostics.controls.map((control, index) => (
+                  <span key={`${frame.frameId}-control-${index}`}>
+                    {`<${control.tagName}${control.role ? ` role="${control.role}"` : ''}> `}
+                    {control.text || control.ariaLabel || control.title || '(no label)'} [{control.stage}]
+                  </span>
+                ))}
+              </>
+            )}
           </div>
         ))}
       </section>

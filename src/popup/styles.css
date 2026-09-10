@@ -117,6 +117,25 @@ h1 {
   margin-bottom: 10px;
 }
 
+.diagnostics {
+  margin-top: 14px;
+}
+
+.diagnostic-frame {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-left: 2px solid #38bdf8;
+  background: rgba(15, 23, 42, 0.7);
+  color: #a5b4cf;
+  font-size: 0.7rem;
+}
+
+.diagnostic-frame strong {
+  color: #e5eefc;
+}
+
 .actions {
   margin-top: 16px;
   display: flex;

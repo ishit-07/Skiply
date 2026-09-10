@@ -4,6 +4,8 @@ import { ManualTimestampSession } from './manual-timestamp-session';
 import { LocalTimestampRepository } from '../storage/timestamp-repository';
 import type { ContentCommandMessage, ContentResponse } from '../shared/runtime-messages';
 import type { FrameStatusReport } from '../shared/runtime-messages';
+import { SETTINGS_KEY } from '../shared/settings';
+import { inspectControlSurface, type ControlSurfaceReport } from './generic-skip-control-detector';
 import { SkipController } from './skip-controller';
 import { SkipControlObserver } from './skip-control-observer';
 import { VideoLifecycleManager } from './video-lifecycle-manager';
@@ -23,6 +25,8 @@ let latestCandidates = {
 };
 let lastReportedFrameStatus = '';
 let lifecycleManager: VideoLifecycleManager | undefined;
+let debugMode = false;
+let controlSurface: ControlSurfaceReport | undefined;
 
 const frameStatus = (): FrameStatusReport => ({
   isTopFrame: window.top === window.self,
@@ -31,7 +35,8 @@ const frameStatus = (): FrameStatusReport => ({
   videoScore: latestVideoScore,
   candidateCount: latestCandidates.count,
   bestCandidateType: latestCandidates.type,
-  bestCandidateConfidence: latestCandidates.confidence
+  bestCandidateConfidence: latestCandidates.confidence,
+  ...(debugMode && controlSurface ? { controlDiagnostics: controlSurface } : {})
 });
 
 const reportFrameStatus = () => {
@@ -62,6 +67,15 @@ log('adapter selected', {
 });
 
 const timestampSession = new ManualTimestampSession(new LocalTimestampRepository());
+
+chrome.storage.local.get(SETTINGS_KEY, (result) => {
+  const settings = result[SETTINGS_KEY] as { debugMode?: boolean } | undefined;
+  debugMode = settings?.debugMode === true;
+  if (debugMode) {
+    controlSurface = inspectControlSurface();
+    reportFrameStatus();
+  }
+});
 
 const getContentStatus = () => ({
   adapterId: adapterSelection.adapter.id,
@@ -118,6 +132,9 @@ const skipController = new SkipController({
 const controlObserver = new SkipControlObserver({
   findCandidates: (activeVideo) => adapterSelection.adapter.findSkipControls(activeVideo),
   onCandidates: (candidates) => {
+    if (debugMode) {
+      controlSurface = inspectControlSurface();
+    }
     const bestCandidate = candidates[0];
     latestCandidates = {
       count: candidates.length,

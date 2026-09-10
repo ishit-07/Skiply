@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   GenericSkipControlDetector,
+  inspectControlSurface,
   normalizeControlText
 } from './generic-skip-control-detector';
 
@@ -92,5 +93,28 @@ describe('GenericSkipControlDetector', () => {
     expect(candidates).toHaveLength(1);
     expect(candidates[0].type).toBe('intro');
     expect(candidates[0].confidence).toBeGreaterThanOrEqual(0.8);
+  });
+
+  it('reports compact diagnostic stages without changing detection behavior', () => {
+    const visible = document.createElement('button');
+    visible.textContent = 'Play';
+    const skip = document.createElement('div');
+    skip.setAttribute('role', 'button');
+    skip.setAttribute('aria-label', 'Skip Intro');
+    const hidden = document.createElement('button');
+    hidden.textContent = 'Skip Intro';
+    hidden.style.display = 'none';
+    const disabled = document.createElement('button');
+    disabled.textContent = 'Skip Intro';
+    disabled.disabled = true;
+    document.body.append(visible, skip, hidden, disabled);
+    [visible, skip, disabled].forEach(setVisible);
+
+    const report = inspectControlSurface();
+
+    expect(report.controls.map(({ stage }) => stage)).toEqual(['not-matched', 'matched', 'hidden', 'disabled']);
+    expect(report.controls[1]?.matchedPhrase).toBe('skip intro');
+    expect(report.nestedIframes).toBe(0);
+    expect(report.canvasElements).toBe(0);
   });
 });

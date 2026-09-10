@@ -17,6 +17,27 @@ export interface CandidateControl {
   evidence: ConfidenceEvidence[];
 }
 
+export interface ControlSurfaceDiagnostic {
+  tagName: string;
+  role: string | null;
+  text: string;
+  ariaLabel: string | null;
+  title: string | null;
+  visible: boolean;
+  enabled: boolean;
+  matchedPhrase: string | null;
+  matchedType: SkipType | null;
+  stage: 'matched' | 'not-matched' | 'hidden' | 'disabled';
+}
+
+export interface ControlSurfaceReport {
+  controls: ControlSurfaceDiagnostic[];
+  truncated: boolean;
+  openShadowHosts: number;
+  nestedIframes: number;
+  canvasElements: number;
+}
+
 export interface ConfidenceEvidence {
   kind: string;
   weight: number;
@@ -159,6 +180,47 @@ const getAccessibleSignals = (
   { source: 'title', value: element.getAttribute('title') ?? '' },
   { source: 'data-attribute', value: getDataAttributeText(element) }
 ];
+
+const truncateDiagnosticText = (value: string, maxLength = 120): string =>
+  value.replace(/\s+/g, ' ').trim().slice(0, maxLength);
+
+export const inspectControlSurface = (
+  root: Document = document,
+  limit = 50
+): ControlSurfaceReport => {
+  const controls = Array.from(root.querySelectorAll<HTMLElement>(CONTROL_SELECTOR));
+  const diagnostics = controls.slice(0, limit).map((element): ControlSurfaceDiagnostic => {
+    const visible = isVisible(element);
+    const enabled = isEnabled(element);
+    const signals = getAccessibleSignals(element);
+    const matchedSignal = signals
+      .map((signal) => ({ ...signal, match: findPhraseMatch(signal.value, mergePhrases(undefined)) }))
+      .find((signal) => signal.match);
+
+    return {
+      tagName: element.tagName.toLowerCase(),
+      role: element.getAttribute('role'),
+      text: truncateDiagnosticText(element.innerText || element.textContent || ''),
+      ariaLabel: element.getAttribute('aria-label'),
+      title: element.getAttribute('title'),
+      visible,
+      enabled,
+      matchedPhrase: matchedSignal?.match?.phrase ?? null,
+      matchedType: matchedSignal?.match?.type ?? null,
+      stage: !visible ? 'hidden' : !enabled ? 'disabled' : matchedSignal?.match ? 'matched' : 'not-matched'
+    };
+  });
+
+  return {
+    controls: diagnostics,
+    truncated: controls.length > limit,
+    openShadowHosts: Array.from(root.querySelectorAll<HTMLElement>('*')).filter(
+      (element) => element.shadowRoot !== null
+    ).length,
+    nestedIframes: root.querySelectorAll('iframe').length,
+    canvasElements: root.querySelectorAll('canvas').length
+  };
+};
 
 const findPhraseMatch = (
   text: string,

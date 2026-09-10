@@ -13,9 +13,7 @@ export default defineConfig(({ command }) => ({
     rollupOptions: {
       input: {
         popup: fileURLToPath(new URL('./src/popup.html', import.meta.url)),
-        options: fileURLToPath(new URL('./src/options.html', import.meta.url)),
-        background: fileURLToPath(new URL('./src/background/index.ts', import.meta.url)),
-        content: fileURLToPath(new URL('./src/content/index.ts', import.meta.url))
+        options: fileURLToPath(new URL('./src/options.html', import.meta.url))
       },
       output: {
         entryFileNames: '[name].js',

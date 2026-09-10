@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import './styles.css';
 import { DEFAULT_SETTINGS, SETTINGS_KEY, type ExtensionSettings } from '../shared/settings';
 import { STATISTICS_KEY, DEFAULT_STATISTICS, type SkipStatistics } from '../shared/statistics';
-import type { ContentCommand, ContentResponse } from '../shared/runtime-messages';
+import type { ContentCommand, ContentResponse, FrameDiagnostic } from '../shared/runtime-messages';
 
 const readSettings = (): Promise<ExtensionSettings> =>
   new Promise((resolve) => {
@@ -21,6 +21,7 @@ const App = () => {
   const [statistics, setStatistics] = useState<SkipStatistics>(DEFAULT_STATISTICS);
   const [timestampStart, setTimestampStart] = useState<number | null>(null);
   const [notice, setNotice] = useState('');
+  const [frameDiagnostics, setFrameDiagnostics] = useState<FrameDiagnostic[]>([]);
 
   useEffect(() => {
     void readSettings().then((resolved) => {
@@ -40,6 +41,14 @@ const App = () => {
           setSite('Unknown');
         }
       }
+      if (activeTab?.id === undefined) {
+        return;
+      }
+      chrome.runtime.sendMessage({ type: 'get-frame-diagnostics', tabId: activeTab.id }, (response: { diagnostics?: FrameDiagnostic[] } | undefined) => {
+        if (!chrome.runtime.lastError) {
+          setFrameDiagnostics(response?.diagnostics ?? []);
+        }
+      });
     });
   }, []);
 
@@ -50,7 +59,7 @@ const App = () => {
         setNotice('No active tab.');
         return;
       }
-      chrome.tabs.sendMessage(tabId, { type: 'content-command', command }, (response: ContentResponse | undefined) => {
+      chrome.tabs.sendMessage(tabId, { type: 'content-command', command }, { frameId: 0 }, (response: ContentResponse | undefined) => {
         if (chrome.runtime.lastError || !response) {
           setNotice('This page is not available to the extension.');
           return;
@@ -88,7 +97,7 @@ const App = () => {
     <main className="popup-shell">
       <header className="popup-header">
         <div>
-          <p className="eyebrow">Universal Skip Intro</p>
+          <p className="eyebrow">Skiply</p>
           <h1>Skiply</h1>
         </div>
         <button
@@ -131,6 +140,26 @@ const App = () => {
         <span>Skipped locally</span>
         <strong>{statistics.skippedCount}</strong>
       </div>
+
+      <section className="diagnostics" aria-label="Skiply diagnostics">
+        <div className="panel-row">
+          <span>Frames running Skiply</span>
+          <strong>{frameDiagnostics.length}</strong>
+        </div>
+        {frameDiagnostics.map((frame) => (
+          <div className="diagnostic-frame" key={frame.frameId}>
+            <strong>Frame {frame.frameId}{frame.isTopFrame ? ' (top)' : ''}</strong>
+            <span>Video: {frame.videoPresent ? 'YES' : 'NO'}</span>
+            {frame.videoPresent && <span>Score: {frame.videoScore?.toFixed(2) ?? 'n/a'}</span>}
+            <span>Candidates: {frame.candidateCount}</span>
+            {frame.bestCandidateType && (
+              <span>
+                Best candidate: {frame.bestCandidateType} / {frame.bestCandidateConfidence?.toFixed(2) ?? 'n/a'}
+              </span>
+            )}
+          </div>
+        ))}
+      </section>
 
       <div className="manual-actions">
         <button type="button" onClick={() => sendContentCommand('mark-start')}>

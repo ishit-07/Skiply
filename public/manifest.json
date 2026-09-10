@@ -18,11 +18,12 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ],
   "action": {
-    "default_title": "Universal Skip Intro",
+    "default_title": "Skiply",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/skiply-16.png",

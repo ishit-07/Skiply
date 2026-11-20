@@ -89,12 +89,87 @@ describe('SkipControlObserver', () => {
 
   it('reacts to attributes used by candidate detection', async () => {
     const onCandidates = vi.fn();
+    const observer = new SkipControlObserver({
+      debounceMs: 1,
+      findCandidates: () => {
+        return document.querySelector('[data-skip-control]')
+          ? [{
+              element: document.querySelector('[data-skip-control]') as HTMLElement,
+              type: 'intro' as const,
+              confidence: 0.96,
+              detectionSource: 'visible-text' as const,
+              evidence: []
+            }]
+          : [];
+      },
+      onCandidates
+    });
+    observer.start();
+    onCandidates.mockClear();
+
+    const button = document.createElement('button');
+    button.textContent = 'Skip Intro';
+    button.setAttribute('data-skip-control', 'true');
+    makeVisible(button);
+    document.body.append(button);
+    document.body.setAttribute('data-player-state', 'ready');
+    await vi.waitFor(() => expect(onCandidates).toHaveBeenCalledTimes(1));
+
+    observer.stop();
+  });
+
+  it('does not emit unchanged candidate state repeatedly', async () => {
+    const onCandidates = vi.fn();
     const observer = new SkipControlObserver({ debounceMs: 1, onCandidates });
     observer.start();
     onCandidates.mockClear();
 
+    const button = document.createElement('button');
+    button.textContent = 'Skip Intro';
+    makeVisible(button);
+    document.body.append(button);
+    await vi.waitFor(() => expect(onCandidates).toHaveBeenCalledTimes(1));
+
     document.body.setAttribute('data-player-state', 'ready');
-    await vi.waitFor(() => expect(onCandidates).toHaveBeenCalled());
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 10));
+
+    expect(onCandidates).toHaveBeenCalledTimes(1);
+    observer.stop();
+  });
+
+  it('emits when a replacement element has the same candidate fields', async () => {
+    let button: HTMLButtonElement | null = null;
+    const onCandidates = vi.fn();
+    const observer = new SkipControlObserver({
+      debounceMs: 1,
+      findCandidates: () => {
+        if (!button) {
+          return [];
+        }
+        return [{
+          element: button,
+          type: 'intro' as const,
+          confidence: 0.96,
+          detectionSource: 'visible-text' as const,
+          evidence: []
+        }];
+      },
+      onCandidates
+    });
+    observer.start();
+    onCandidates.mockClear();
+
+    button = document.createElement('button');
+    makeVisible(button);
+    document.body.append(button);
+    await vi.waitFor(() => expect(onCandidates).toHaveBeenCalledTimes(1));
+
+    button.remove();
+    const replacement = document.createElement('button');
+    makeVisible(replacement);
+    document.body.append(replacement);
+    button = replacement;
+    await vi.waitFor(() => expect(onCandidates).toHaveBeenCalledTimes(2));
 
     observer.stop();
   });

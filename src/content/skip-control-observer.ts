@@ -37,6 +37,9 @@ export class SkipControlObserver {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private started = false;
   private activeVideo: HTMLVideoElement | null = null;
+  private lastCandidateFingerprint: string | null = null;
+  private readonly elementIds = new WeakMap<HTMLElement, number>();
+  private nextElementId = 1;
 
   public constructor(options: SkipControlObserverOptions) {
     this.detector = options.detector ?? new GenericSkipControlDetector();
@@ -78,6 +81,17 @@ export class SkipControlObserver {
       globalThis.clearTimeout(this.timer);
       this.timer = null;
     }
+    this.lastCandidateFingerprint = null;
+  }
+
+  private getElementId(element: HTMLElement): number {
+    const existing = this.elementIds.get(element);
+    if (existing !== undefined) {
+      return existing;
+    }
+    const id = this.nextElementId++;
+    this.elementIds.set(element, id);
+    return id;
   }
 
   public scan(): CandidateControl[] {
@@ -87,7 +101,22 @@ export class SkipControlObserver {
     const candidates = this.findCandidates
       ? this.findCandidates(this.activeVideo)
       : this.detector.findCandidates(document, this.activeVideo);
-    this.onCandidates(candidates);
+    const fingerprint = candidates
+      .map((candidate) =>
+        [
+          this.getElementId(candidate.element),
+          candidate.element.isConnected ? 'connected' : 'stale',
+          candidate.type,
+          candidate.confidence,
+          candidate.detectionSource
+        ].join(':')
+      )
+      .join('|');
+    const nextFingerprint = fingerprint === '' ? 'no-candidates' : fingerprint;
+    if (nextFingerprint !== this.lastCandidateFingerprint) {
+      this.lastCandidateFingerprint = nextFingerprint;
+      this.onCandidates(candidates);
+    }
     return candidates;
   }
 

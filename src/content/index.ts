@@ -4,7 +4,12 @@ import { ManualTimestampSession } from './manual-timestamp-session';
 import { LocalTimestampRepository } from '../storage/timestamp-repository';
 import type { ContentCommandMessage, ContentResponse } from '../shared/runtime-messages';
 import type { FrameStatusReport } from '../shared/runtime-messages';
-import { SETTINGS_KEY } from '../shared/settings';
+import {
+  DEFAULT_SETTINGS,
+  SETTINGS_KEY,
+  type ExtensionSettings,
+  type SkipType
+} from '../shared/settings';
 import { inspectControlSurface, type ControlSurfaceReport } from './generic-skip-control-detector';
 import { SkipController } from './skip-controller';
 import { SkipControlObserver } from './skip-control-observer';
@@ -21,6 +26,21 @@ let lastReportedFrameStatus = '';
 let lifecycleManager: VideoLifecycleManager | undefined;
 let debugMode = false;
 let controlSurface: ControlSurfaceReport | undefined;
+let extensionSettings: ExtensionSettings = DEFAULT_SETTINGS;
+
+const getEnabledSkipTypes = (settings: ExtensionSettings): ReadonlySet<SkipType> => {
+  const types = new Set<SkipType>();
+  if (settings.skipIntro) {
+    types.add('intro');
+  }
+  if (settings.skipRecap) {
+    types.add('recap');
+  }
+  if (settings.skipCredits) {
+    types.add('credits');
+  }
+  return types;
+};
 
 const log = (...args: unknown[]) => {
   if (debugMode) {
@@ -82,25 +102,36 @@ log('adapter selected', {
 const timestampSession = new ManualTimestampSession(new LocalTimestampRepository());
 
 chrome.storage.local.get(SETTINGS_KEY, (result) => {
-  const settings = result[SETTINGS_KEY] as { debugMode?: boolean } | undefined;
-  debugMode = settings?.debugMode === true;
+  extensionSettings = { ...DEFAULT_SETTINGS, ...(result[SETTINGS_KEY] as Partial<ExtensionSettings> | undefined) };
+  debugMode = extensionSettings.debugMode;
   if (debugMode) {
     controlSurface = inspectControlSurface();
     reportFrameStatus();
   }
+  skipController.updateOptions({
+    confidenceThreshold: extensionSettings.confidenceThreshold,
+    enabledTypes: extensionSettings.enabled ? getEnabledSkipTypes(extensionSettings) : new Set<SkipType>()
+  });
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== 'local' || !changes[SETTINGS_KEY]) {
     return;
   }
-  const settings = changes[SETTINGS_KEY].newValue as { debugMode?: boolean } | undefined;
-  debugMode = settings?.debugMode === true;
+  extensionSettings = {
+    ...DEFAULT_SETTINGS,
+    ...(changes[SETTINGS_KEY].newValue as Partial<ExtensionSettings> | undefined)
+  };
+  debugMode = extensionSettings.debugMode;
   if (debugMode) {
     controlSurface = inspectControlSurface();
   } else {
     controlSurface = undefined;
   }
+  skipController.updateOptions({
+    confidenceThreshold: extensionSettings.confidenceThreshold,
+    enabledTypes: extensionSettings.enabled ? getEnabledSkipTypes(extensionSettings) : new Set<SkipType>()
+  });
   reportFrameStatus();
 });
 

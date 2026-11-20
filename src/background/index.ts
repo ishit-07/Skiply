@@ -3,6 +3,27 @@ import { StatisticsService } from '../storage/statistics-service';
 import type { FrameDiagnostic, FrameStatusMessage, GetFrameDiagnosticsMessage } from '../shared/runtime-messages';
 
 const frameDiagnostics = new Map<number, Map<number, FrameDiagnostic>>();
+const FRAME_DIAGNOSTICS_KEY_PREFIX = 'skiply-frame-diagnostics:';
+const getFrameDiagnosticsKey = (tabId: number): string => `${FRAME_DIAGNOSTICS_KEY_PREFIX}${tabId}`;
+
+const persistFrameDiagnostics = (tabId: number, tabFrames: Map<number, FrameDiagnostic>): void => {
+  const diagnostics = Array.from(tabFrames.values()).sort((left, right) => left.frameId - right.frameId);
+  void chrome.storage.session.set({
+    [getFrameDiagnosticsKey(tabId)]: diagnostics
+  });
+};
+
+const clearPersistedFrameDiagnostics = (tabId: number): void => {
+  frameDiagnostics.delete(tabId);
+  void chrome.storage.session.remove(getFrameDiagnosticsKey(tabId));
+};
+
+const readPersistedFrameDiagnostics = (tabId: number): Promise<FrameDiagnostic[]> =>
+  new Promise((resolve) => {
+    chrome.storage.session.get(getFrameDiagnosticsKey(tabId), (result) => {
+      resolve((result[getFrameDiagnosticsKey(tabId)] as FrameDiagnostic[] | undefined) ?? []);
+    });
+  });
 
 const readSettings = (): Promise<ExtensionSettings> =>
   new Promise((resolve) => {
@@ -40,23 +61,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       frameUrl: sender.url ?? frameMessage.status.frameUrl
     });
     frameDiagnostics.set(tabId, tabFrames);
+    persistFrameDiagnostics(tabId, tabFrames);
     return false;
   }
 
   if (message.type === 'get-frame-diagnostics') {
     const tabId = (message as GetFrameDiagnosticsMessage).tabId;
-    sendResponse({
-      diagnostics:
-        tabId === undefined ? [] : Array.from(frameDiagnostics.get(tabId)?.values() ?? []).sort((left, right) => left.frameId - right.frameId)
+    if (tabId === undefined) {
+      sendResponse({ diagnostics: [] });
+      return false;
+    }
+
+    const tabFrames = frameDiagnostics.get(tabId);
+    if (tabFrames) {
+      sendResponse({
+        diagnostics: Array.from(tabFrames.values()).sort((left, right) => left.frameId - right.frameId)
+      });
+      return false;
+    }
+
+    readPersistedFrameDiagnostics(tabId).then((diagnostics) => {
+      sendResponse({ diagnostics });
+      frameDiagnostics.set(tabId, new Map(diagnostics.map((frame) => [frame.frameId, frame])));
     });
-    return false;
+    return true;
   }
 
   if (message.type === 'frame-disposed') {
     const tabId = sender.tab?.id;
     const frameId = sender.frameId;
     if (tabId !== undefined && frameId !== undefined) {
-      frameDiagnostics.get(tabId)?.delete(frameId);
+      const tabFrames = frameDiagnostics.get(tabId);
+      tabFrames?.delete(frameId);
+      if (tabFrames) {
+        persistFrameDiagnostics(tabId, tabFrames);
+      } else {
+        void chrome.storage.session.remove(getFrameDiagnosticsKey(tabId));
+      }
     }
     return false;
   }
@@ -80,5 +121,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
-  frameDiagnostics.delete(tabId);
+  clearPersistedFrameDiagnostics(tabId);
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status === 'loading' || changeInfo.url !== undefined) {
+    clearPersistedFrameDiagnostics(tabId);
+  }
 });

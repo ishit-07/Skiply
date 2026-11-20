@@ -23,6 +23,24 @@ const App = () => {
   const [notice, setNotice] = useState('');
   const [frameDiagnostics, setFrameDiagnostics] = useState<FrameDiagnostic[]>([]);
 
+  const refreshFrameDiagnostics = () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs[0]?.id;
+      if (tabId === undefined) {
+        setFrameDiagnostics([]);
+        return;
+      }
+      chrome.runtime.sendMessage(
+        { type: 'get-frame-diagnostics', tabId },
+        (response: { diagnostics?: FrameDiagnostic[] } | undefined) => {
+          if (!chrome.runtime.lastError) {
+            setFrameDiagnostics(response?.diagnostics ?? []);
+          }
+        }
+      );
+    });
+  };
+
   useEffect(() => {
     void readSettings().then((resolved) => {
       setSettings(resolved);
@@ -41,15 +59,32 @@ const App = () => {
           setSite('Unknown');
         }
       }
-      if (activeTab?.id === undefined) {
-        return;
+      refreshFrameDiagnostics();
+    });
+
+    const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
+      if (areaName === 'session' && Object.keys(changes).some((key) => key.startsWith('skiply-frame-diagnostics:'))) {
+        refreshFrameDiagnostics();
       }
-      chrome.runtime.sendMessage({ type: 'get-frame-diagnostics', tabId: activeTab.id }, (response: { diagnostics?: FrameDiagnostic[] } | undefined) => {
-        if (!chrome.runtime.lastError) {
-          setFrameDiagnostics(response?.diagnostics ?? []);
+    };
+    const handleTabActivation = () => refreshFrameDiagnostics();
+    const handleTabUpdated = (tabId: number, changeInfo: { status?: string; url?: string }) => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id === tabId && (changeInfo.status === 'loading' || changeInfo.url !== undefined)) {
+          refreshFrameDiagnostics();
         }
       });
-    });
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    chrome.tabs.onActivated.addListener(handleTabActivation);
+    chrome.tabs.onUpdated.addListener(handleTabUpdated);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+      chrome.tabs.onActivated.removeListener(handleTabActivation);
+      chrome.tabs.onUpdated.removeListener(handleTabUpdated);
+    };
   }, []);
 
   const sendContentCommand = (command: ContentCommand) => {

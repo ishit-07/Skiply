@@ -46,8 +46,8 @@ const isEnabled = (element: HTMLElement): boolean =>
   element.getAttribute('disabled') === null;
 
 export class SkipController {
-  private readonly confidenceThreshold: number;
-  private readonly enabledTypes: ReadonlySet<SkipType>;
+  private confidenceThreshold: number;
+  private enabledTypes: ReadonlySet<SkipType>;
   private readonly onSkipped?: (candidate: CandidateControl) => void;
   private readonly processedElements = new WeakSet<HTMLElement>();
   private activeVideo: HTMLVideoElement | null = null;
@@ -60,6 +60,16 @@ export class SkipController {
 
   public setActiveVideo(video: HTMLVideoElement | null): void {
     this.activeVideo = video;
+  }
+
+  public updateOptions(options: {
+    confidenceThreshold: number;
+    enabledTypes: ReadonlySet<SkipType>;
+  }): void {
+    this.confidenceThreshold = Number.isFinite(options.confidenceThreshold)
+      ? Math.max(0, Math.min(1, options.confidenceThreshold))
+      : DEFAULT_CONFIDENCE_THRESHOLD;
+    this.enabledTypes = new Set(options.enabledTypes);
   }
 
   public processCandidates(candidates: readonly CandidateControl[]): SkipActionResult | null {

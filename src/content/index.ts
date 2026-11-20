@@ -10,12 +10,6 @@ import { SkipController } from './skip-controller';
 import { SkipControlObserver } from './skip-control-observer';
 import { VideoLifecycleManager } from './video-lifecycle-manager';
 
-const log = (...args: unknown[]) => {
-  console.info('[USI][content]', ...args);
-};
-
-console.info('[Skiply] Content script initialized');
-
 let readyNotified = false;
 let latestVideoScore: number | null = null;
 let latestCandidates = {
@@ -27,6 +21,25 @@ let lastReportedFrameStatus = '';
 let lifecycleManager: VideoLifecycleManager | undefined;
 let debugMode = false;
 let controlSurface: ControlSurfaceReport | undefined;
+
+const log = (...args: unknown[]) => {
+  if (debugMode) {
+    console.info('[USI][content]', ...args);
+  }
+};
+
+const safeSendMessage = (message: object, callback?: (response: unknown) => void): void => {
+  try {
+    if (callback) {
+      chrome.runtime.sendMessage(message, callback);
+    } else {
+      const result = chrome.runtime.sendMessage(message);
+      void result?.catch(() => undefined);
+    }
+  } catch {
+    // The extension context may be invalidated after a reload.
+  }
+};
 
 const frameStatus = (): FrameStatusReport => ({
   isTopFrame: window.top === window.self,
@@ -46,7 +59,7 @@ const reportFrameStatus = () => {
     return;
   }
   lastReportedFrameStatus = serialized;
-  chrome.runtime.sendMessage({ type: 'frame-status', status });
+  safeSendMessage({ type: 'frame-status', status });
 };
 
 const notifyReady = () => {
@@ -54,7 +67,7 @@ const notifyReady = () => {
     return;
   }
   readyNotified = true;
-  chrome.runtime.sendMessage({ type: 'ping', url: window.location.href }, () => {
+  safeSendMessage({ type: 'ping', url: window.location.href }, () => {
     log('ready on', window.location.href);
   });
 };
@@ -75,6 +88,20 @@ chrome.storage.local.get(SETTINGS_KEY, (result) => {
     controlSurface = inspectControlSurface();
     reportFrameStatus();
   }
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== 'local' || !changes[SETTINGS_KEY]) {
+    return;
+  }
+  const settings = changes[SETTINGS_KEY].newValue as { debugMode?: boolean } | undefined;
+  debugMode = settings?.debugMode === true;
+  if (debugMode) {
+    controlSurface = inspectControlSurface();
+  } else {
+    controlSurface = undefined;
+  }
+  reportFrameStatus();
 });
 
 const getContentStatus = () => ({
@@ -120,7 +147,7 @@ chrome.runtime.onMessage.addListener((message: ContentCommandMessage, _sender, s
 
 const skipController = new SkipController({
   onSkipped: (candidate) => {
-    chrome.runtime.sendMessage({ type: 'record-skip' });
+    safeSendMessage({ type: 'record-skip' });
     log('skip action accepted', {
       type: candidate.type,
       confidence: candidate.confidence,
@@ -189,5 +216,5 @@ if (document.readyState !== 'loading') {
 }
 
 window.addEventListener('pagehide', () => {
-  chrome.runtime.sendMessage({ type: 'frame-disposed' });
+  safeSendMessage({ type: 'frame-disposed' });
 });

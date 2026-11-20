@@ -82,4 +82,25 @@ describe('SkipController', () => {
     const credits = makeCandidate('credits');
     expect(controller.processCandidate(credits).reason).toBe('unsupported-type');
   });
+
+  it('updates confidence and enabled skip types without lowering safety checks', () => {
+    const candidate = makeCandidate();
+    const click = vi.spyOn(candidate.element, 'click');
+    const controller = new SkipController();
+    controller.setActiveVideo(makeVideo());
+
+    controller.updateOptions({
+      confidenceThreshold: 0.97,
+      enabledTypes: new Set(['recap'])
+    });
+
+    expect(controller.processCandidate(candidate).reason).toBe('low-confidence');
+    expect(click).not.toHaveBeenCalled();
+
+    controller.updateOptions({
+      confidenceThreshold: 0.9,
+      enabledTypes: new Set(['intro'])
+    });
+    expect(controller.processCandidate(candidate).reason).toBe('skipped');
+  });
 });

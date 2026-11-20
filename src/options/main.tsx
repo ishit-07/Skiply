@@ -40,7 +40,7 @@ const App = () => {
 
   return (
     <main className="options-shell">
-      <h1>Universal Skip Intro</h1>
+      <h1>Skiply</h1>
       <p className="subtle">Local-first controls for safer skip detection.</p>
 
       <section className="settings-section">
